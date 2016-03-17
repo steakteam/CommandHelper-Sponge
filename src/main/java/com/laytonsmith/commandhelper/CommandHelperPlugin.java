@@ -11,9 +11,14 @@ import com.laytonsmith.PureUtilities.ExecutionQueue;
 import com.laytonsmith.PureUtilities.SimpleVersion;
 import com.laytonsmith.PureUtilities.TermColors;
 import com.laytonsmith.abstraction.Implementation;
+import com.laytonsmith.abstraction.MCCommandSender;
 import com.laytonsmith.abstraction.MCServer;
 import com.laytonsmith.abstraction.StaticLayer;
 import com.laytonsmith.abstraction.sponge.SpongeConvertor;
+import com.laytonsmith.abstraction.sponge.SpongeMCCommandBlock;
+import com.laytonsmith.abstraction.sponge.SpongeMCCommandSender;
+import com.laytonsmith.abstraction.sponge.SpongeMCConsole;
+import com.laytonsmith.abstraction.sponge.entities.SpongeMCPlayer;
 import com.laytonsmith.core.AliasCore;
 import com.laytonsmith.core.CHLog;
 import com.laytonsmith.core.Installer;
@@ -28,6 +33,9 @@ import com.laytonsmith.persistence.PersistenceNetwork;
 import org.mcstats.Metrics;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.command.source.CommandBlockSource;
+import org.spongepowered.api.command.source.ConsoleSource;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -39,15 +47,22 @@ import org.spongepowered.api.plugin.Plugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
-@Plugin(id = PomData.ARTIFACT_ID, name = PomData.NAME, version = PomData.VERSION)
+@Plugin(id = PomData.GROUP + "." + PomData.ARTIFACT_ID, name = PomData.NAME,
+		version = PomData.VERSION, description = PomData.DESCRIPTION)
 public class CommandHelperPlugin {
 
 	private static AliasCore ac;
@@ -116,16 +131,16 @@ public class CommandHelperPlugin {
 		self = this;
 
 		ClassDiscoveryCache cdc = new ClassDiscoveryCache(CommandHelperFileLocations.getDefault().getCacheDirectory());
+		ClassDiscovery.getDefaultInstance().setDebugMode(true);
 		cdc.setLogger(Logger.getLogger(CommandHelperPlugin.class.getName()));
 		ClassDiscovery.getDefaultInstance().setClassDiscoveryCache(cdc);
-		ClassDiscovery.getDefaultInstance().addDiscoveryLocation(
-				ClassDiscovery.GetClassContainer(CommandHelperPlugin.class));
+		ClassDiscovery.getDefaultInstance().addDiscoveryLocation(ClassDiscovery.GetClassContainer(CommandHelperPlugin.class));
 		ClassDiscovery.getDefaultInstance().addDiscoveryLocation(ClassDiscovery.GetClassContainer(Game.class));
 
 		StreamUtils.GetSystemOut().println("[CommandHelper] Running initial class discovery,"
 				+ " this will probably take a few seconds...");
 
-		ReflectionUtils.set(StaticLayer.class, "convertor", new SpongeConvertor()); // ClassDiscovery broke
+		// ReflectionUtils.set(StaticLayer.class, "convertor", new SpongeConvertor()); // ClassDiscovery broke
 		myServer = StaticLayer.GetServer();
 		StreamUtils.GetSystemOut().println("[CommandHelper] Loading extensions in the background...");
 
@@ -260,8 +275,22 @@ public class CommandHelperPlugin {
 
 	@Listener
 	public void onCommand(SendCommandEvent event) {
-		myServer.broadcastMessage(
-				"Named: " + StringUtils.Join(event.getCause().getNamedCauses().keySet(), ", ", ", and "));
-		myServer.broadcastMessage("All: " + StringUtils.Join(event.getCause().all(), ", ", ", and "));
+		Optional<CommandSource> source = event.getCause().get("Source", CommandSource.class);
+		if (!source.isPresent()) {
+			myServer.broadcastMessage("Skipping command.");
+			return;
+		}
+
+		MCCommandSender sender;
+
+		if (source.get() instanceof Player) {
+			sender = new SpongeMCPlayer((Player) source.get());
+		} else if (source.get() instanceof ConsoleSource) {
+			sender = new SpongeMCConsole((ConsoleSource) source.get());
+		} else if (source.get() instanceof CommandBlockSource) {
+			sender = new SpongeMCCommandBlock((CommandBlockSource) source.get());
+		} else {
+			sender = new SpongeMCCommandSender(source.get());
+		}
 	}
 }
