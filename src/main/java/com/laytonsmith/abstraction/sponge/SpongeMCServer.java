@@ -19,6 +19,7 @@ import com.laytonsmith.abstraction.enums.MCInventoryType;
 import com.laytonsmith.abstraction.enums.MCVersion;
 import com.laytonsmith.abstraction.pluginmessages.MCMessenger;
 import com.laytonsmith.abstraction.sponge.entities.SpongeMCPlayer;
+import com.laytonsmith.commandhelper.CommandHelperPlugin;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Server;
 import org.spongepowered.api.scoreboard.Scoreboard;
@@ -253,7 +254,7 @@ public class SpongeMCServer implements MCServer {
 
 	@Override
 	public MCMessenger getMessenger() {
-		return null;
+		return new SpongeMCPluginMeta(CommandHelperPlugin.self, __Game().getChannelRegistrar());
 	}
 
 	@Override

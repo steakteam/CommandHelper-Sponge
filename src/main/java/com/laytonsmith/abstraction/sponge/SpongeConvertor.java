@@ -24,6 +24,7 @@ import com.laytonsmith.abstraction.enums.MCPatternShape;
 import com.laytonsmith.abstraction.enums.MCPotionType;
 import com.laytonsmith.abstraction.enums.MCRecipeType;
 import com.laytonsmith.abstraction.enums.MCTone;
+import com.laytonsmith.abstraction.sponge.events.SpongeAbstractEventMixin;
 import com.laytonsmith.abstraction.sponge.inventory.SpongeMCItemStack;
 import com.laytonsmith.annotations.convert;
 import com.laytonsmith.commandhelper.CommandHelperPlugin;
@@ -49,7 +50,7 @@ public class SpongeConvertor extends AbstractConvertor {
 
 	@Override
 	public Class GetServerEventMixin() {
-		return null;
+		return SpongeAbstractEventMixin.class;
 	}
 
 	@Override

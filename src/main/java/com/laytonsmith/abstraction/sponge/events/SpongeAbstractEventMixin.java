@@ -1,6 +1,8 @@
 package com.laytonsmith.abstraction.sponge.events;
 
+import com.laytonsmith.core.constructs.CString;
 import com.laytonsmith.core.constructs.Construct;
+import com.laytonsmith.core.constructs.Target;
 import com.laytonsmith.core.events.AbstractEvent;
 import com.laytonsmith.core.events.BindableEvent;
 import com.laytonsmith.core.events.EventMixinInterface;
@@ -33,6 +35,7 @@ public class SpongeAbstractEventMixin implements EventMixinInterface {
 	@Override
 	public Map<String, Construct> evaluate_helper(BindableEvent bindableEvent) throws EventException {
 		Map<String, Construct> map = new HashMap<>();
+		map.put("event_type", new CString(mySuper.getName(), Target.UNKNOWN));
 		return map;
 	}
 

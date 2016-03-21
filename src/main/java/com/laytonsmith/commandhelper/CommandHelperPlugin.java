@@ -4,17 +4,15 @@ import com.google.inject.Inject;
 import com.laytonsmith.PureUtilities.ClassLoading.ClassDiscovery;
 import com.laytonsmith.PureUtilities.ClassLoading.ClassDiscoveryCache;
 import com.laytonsmith.PureUtilities.Common.OSUtils;
-import com.laytonsmith.PureUtilities.Common.ReflectionUtils;
 import com.laytonsmith.PureUtilities.Common.StreamUtils;
-import com.laytonsmith.PureUtilities.Common.StringUtils;
 import com.laytonsmith.PureUtilities.ExecutionQueue;
 import com.laytonsmith.PureUtilities.SimpleVersion;
 import com.laytonsmith.PureUtilities.TermColors;
 import com.laytonsmith.abstraction.Implementation;
 import com.laytonsmith.abstraction.MCCommandSender;
+import com.laytonsmith.abstraction.MCPlayer;
 import com.laytonsmith.abstraction.MCServer;
 import com.laytonsmith.abstraction.StaticLayer;
-import com.laytonsmith.abstraction.sponge.SpongeConvertor;
 import com.laytonsmith.abstraction.sponge.SpongeMCCommandBlock;
 import com.laytonsmith.abstraction.sponge.SpongeMCCommandSender;
 import com.laytonsmith.abstraction.sponge.SpongeMCConsole;
@@ -33,24 +31,32 @@ import com.laytonsmith.persistence.PersistenceNetwork;
 import org.mcstats.Metrics;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.source.CommandBlockSource;
 import org.spongepowered.api.command.source.ConsoleSource;
+import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.event.command.SendCommandEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
+import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.action.TextActions;
+import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.format.TextStyles;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,10 +65,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 @Plugin(id = PomData.GROUP + "." + PomData.ARTIFACT_ID, name = PomData.NAME,
-		version = PomData.VERSION, description = PomData.DESCRIPTION)
+		version = PomData.VERSION, description = PomData.DESCRIPTION, url = PomData.WEBSITE)
 public class CommandHelperPlugin {
 
 	private static AliasCore ac;
@@ -131,7 +136,6 @@ public class CommandHelperPlugin {
 		self = this;
 
 		ClassDiscoveryCache cdc = new ClassDiscoveryCache(CommandHelperFileLocations.getDefault().getCacheDirectory());
-		ClassDiscovery.getDefaultInstance().setDebugMode(true);
 		cdc.setLogger(Logger.getLogger(CommandHelperPlugin.class.getName()));
 		ClassDiscovery.getDefaultInstance().setClassDiscoveryCache(cdc);
 		ClassDiscovery.getDefaultInstance().addDiscoveryLocation(ClassDiscovery.GetClassContainer(CommandHelperPlugin.class));
@@ -249,6 +253,20 @@ public class CommandHelperPlugin {
 	}
 
 	@Listener
+	public void onPostInit(GamePostInitializationEvent event) {
+		// build enums
+	}
+
+	@Listener
+	public void serverStarting(GameStartingServerEvent event) {
+		Sponge.getCommandManager().register(this, recompile, "recompile", "reloadalias", "reloadaliases");
+		Sponge.getCommandManager().register(this, commandhelper, "commandhelper");
+		Sponge.getCommandManager().register(this, runalias, "runalias");
+		Sponge.getCommandManager().register(this, interpreteron, "interpreter-on");
+		Sponge.getCommandManager().register(this, interpreter, "interpreter");
+	}
+
+	@Listener
 	public void onDisable(GameStoppingEvent event) {
 		//free up some memory
 		StaticLayer.GetConvertor().runShutdownHooks();
@@ -275,7 +293,7 @@ public class CommandHelperPlugin {
 
 	@Listener
 	public void onCommand(SendCommandEvent event) {
-		Optional<CommandSource> source = event.getCause().get("Source", CommandSource.class);
+		Optional<CommandSource> source = event.getCause().get(NamedCause.SOURCE, CommandSource.class);
 		if (!source.isPresent()) {
 			myServer.broadcastMessage("Skipping command.");
 			return;
@@ -293,4 +311,99 @@ public class CommandHelperPlugin {
 			sender = new SpongeMCCommandSender(source.get());
 		}
 	}
+
+	Text urlTextHelper(Text.Builder text, String address) {
+		URL url;
+		try {
+			url = new URL(address);
+		} catch (MalformedURLException ex) {
+			return text.onClick(TextActions.executeCallback(commandSource -> commandSource.sendMessage(
+					Text.builder("Go here: ").color(TextColors.YELLOW).append(Text.of(address)).build()))).build();
+		}
+		return text.onClick(TextActions.openUrl(url)).build();
+	}
+
+	CommandSpec
+			recompile = CommandSpec.builder()
+			.permission(PomData.ARTIFACT_ID + ".reloadaliases")
+			.description(Text.builder("Reloads plugin settings and recompiles scripts. ").append(
+					urlTextHelper(Text.builder("[Help Page]").style(TextStyles.ITALIC).color(TextColors.YELLOW),
+							PomData.WEBSITE + "/Staged/Advanced_Guide#reloadaliases"
+					)).build())
+			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
+			.executor((src, args) -> {
+				String[] myArgs = args.<String>getOne("args").isPresent()
+						? args.<String>getOne("args").get().split(" ") : new String[0];
+				MCPlayer player = src instanceof Player ? new SpongeMCPlayer((Player) src) : null;
+				getCore().reload(player, myArgs, false);
+				return CommandResult.success();
+			})
+			.build(),
+			commandhelper = CommandSpec.builder()
+					.description(Text.of("This command does nothing."))
+					.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
+					.executor((src, args) -> {
+						Optional<String> myArgs = args.<String>getOne("args");
+						if (myArgs.isPresent() && "null".equals(myArgs.get().split(" ")[0])) {
+							return CommandResult.success();
+						}
+						return CommandResult.empty();
+					})
+					.build(),
+			runalias = CommandSpec.builder()
+					.executor((src, args) -> CommandResult.empty())
+					.build(),
+			interpreteron = CommandSpec.builder()
+					.description(Text.of("Enables interpreter mode for the configured time."))
+					.extendedDescription(Text.of("Can only be run from console. Turns on the interpreter for however"
+							+ " long is specified in the preferences option \"interpreter-timeout\"."))
+					.executor(((src, args) -> {
+						if (src instanceof ConsoleSource) {
+							int interpreterTimeout = Prefs.InterpreterTimeout();
+							if (interpreterTimeout != 0) {
+								interpreterUnlockedUntil =
+										(interpreterTimeout * 60 * 1000) + System.currentTimeMillis();
+								src.sendMessage(Text.of("Interpreter mode unlocked for " + interpreterTimeout
+										+ " minute" + (interpreterTimeout == 1 ? "" : "s")));
+							} else {
+								src.sendMessage(Text.of("Interpreter mode was already set for permanent activation."
+										+ " If this was not desired, you should change it in "
+										+ CommandHelperFileLocations.getDefault().getPreferencesFile().getAbsolutePath()));
+							}
+						} else {
+							src.sendMessage(Text.of("This command can only be run from console."));
+						}
+						return CommandResult.success();
+					}))
+					.build(),
+			interpreter = CommandSpec.builder()
+					.description(Text.builder("Puts your chat in interpreter mode. ").append(urlTextHelper(
+							Text.builder("[Help Page]").style(TextStyles.ITALIC).color(TextColors.YELLOW),
+							PomData.WEBSITE + "/Interpreter_Mode"
+					)).build())
+					.permission(PomData.ARTIFACT_ID + ".interpreter")
+					.executor(((src, args) -> {
+						if (src instanceof Player) {
+							if (!Prefs.EnableInterpreter()) {
+								src.sendMessage(Text.builder("The interpreter is currently disabled."
+										+ " Check your preferences file.").color(TextColors.RED).build());
+							} else if (Prefs.InterpreterTimeout() != 0
+									&& interpreterUnlockedUntil < System.currentTimeMillis()) {
+								src.sendMessage(Text.builder("Interpreter mode is currently locked."
+										+ " Run \"interpreter-on\" in console to unlock it. If you want to turn this"
+										+ " protection off entirely, set the interpreter-timeout option to 0 in "
+										+ CommandHelperFileLocations.getDefault().getPreferencesFile().getName())
+										.color(TextColors.RED).build());
+							} else {
+								interpreterListener.startInterpret(src.getName());
+								src.sendMessage(Text.builder("You are now in interpreter mode. Type a dash (-) on a"
+										+ " line by itself to exit, and >>> to enter multiline mode.")
+										.color(TextColors.YELLOW).build());
+							}
+						} else {
+							src.sendMessage(Text.of("Interpreter is only available for players."));
+						}
+						return CommandResult.success();
+					}))
+					.build();
 }
