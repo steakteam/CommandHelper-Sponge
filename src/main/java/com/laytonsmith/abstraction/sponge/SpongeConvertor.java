@@ -111,11 +111,6 @@ public class SpongeConvertor extends AbstractConvertor {
 	}
 
 	@Override
-	public MCPotionData GetPotionData(int i) {
-		return null;
-	}
-
-	@Override
 	public void Startup(CommandHelperPlugin commandHelperPlugin) {
 
 	}
