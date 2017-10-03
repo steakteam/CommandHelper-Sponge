@@ -236,7 +236,7 @@ public class CommandHelperPlugin {
 			//Repopulate our cache for currently online players.
 			//New players that join later will get a lookup done
 			//on them at that time.
-			Static.HostnameCache(p.getName(), p.getConnection().getAddress());
+			Static.HostnameCache(p.getName(), p.getConnection().getAddress().getHostName());
 		}
 
 		//interpreter events

@@ -164,17 +164,7 @@ public class SpongeMCLiving extends SpongeMCEntity implements MCLivingEntity {
 	}
 
 	@Override
-	public boolean isGliding() {
-		return false;
-	}
-
-	@Override
 	public boolean isLeashed() {
-		return false;
-	}
-
-	@Override
-	public boolean hasAI() {
 		return false;
 	}
 
@@ -235,16 +225,6 @@ public class SpongeMCLiving extends SpongeMCEntity implements MCLivingEntity {
 
 	@Override
 	public void setTarget(MCLivingEntity mcLivingEntity, Target target) {
-
-	}
-
-	@Override
-	public void setGliding(Boolean aBoolean) {
-
-	}
-
-	@Override
-	public void setAI(Boolean aBoolean) {
 
 	}
 

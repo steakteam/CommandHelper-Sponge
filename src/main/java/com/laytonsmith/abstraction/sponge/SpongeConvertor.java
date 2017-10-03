@@ -219,4 +219,9 @@ public class SpongeConvertor extends AbstractConvertor {
 	public String GetUser(Environment environment) {
 		return null;
 	}
+
+	@Override
+	public MCPotionData GetPotionData(int i) {
+		return null;
+	}
 }
