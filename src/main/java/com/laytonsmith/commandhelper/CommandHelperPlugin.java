@@ -222,7 +222,7 @@ public class CommandHelperPlugin {
 			//Repopulate our cache for currently online players.
 			//New players that join later will get a lookup done
 			//on them at that time.
-			Static.HostnameCache(p.getName(), p.getConnection().getAddress().getHostName());
+			Static.HostnameCache(p.getName(), p.getConnection().getAddress());
 		}
 
 		//interpreter events
@@ -315,7 +315,7 @@ public class CommandHelperPlugin {
 			.permission(PomData.ARTIFACT_ID + ".reloadaliases")
 			.description(Text.builder("Reloads plugin settings and recompiles scripts. ").append(
 					urlTextHelper(Text.builder("[Help Page]").style(TextStyles.ITALIC).color(TextColors.YELLOW),
-							PomData.WEBSITE + "/Staged/Advanced_Guide#reloadaliases"
+					              PomData.WEBSITE + "/Staged/Advanced_Guide#reloadaliases"
 					)).build())
 			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
 			.executor((src, args) -> {
@@ -370,8 +370,8 @@ public class CommandHelperPlugin {
 					.build(),
 			interpreter = CommandSpec.builder()
 					.description(Text.builder("Puts your chat in interpreter mode. ").append(urlTextHelper(
-							Text.builder("[Help Page]").style(TextStyles.ITALIC).color(TextColors.YELLOW),
-							PomData.WEBSITE + "/Interpreter_Mode"
+                            Text.builder("[Help Page]").style(TextStyles.ITALIC).color(TextColors.YELLOW),
+                            PomData.WEBSITE + "/Interpreter_Mode"
 					)).build())
 					.permission(PomData.ARTIFACT_ID + ".interpreter")
 					.executor(((src, args) -> {

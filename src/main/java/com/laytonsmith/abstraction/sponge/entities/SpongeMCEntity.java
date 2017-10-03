@@ -225,6 +225,26 @@ public class SpongeMCEntity implements MCEntity {
 	}
 
 	@Override
+	public boolean isGlowing() {
+		return false;
+	}
+
+	@Override
+	public void setGlowing(Boolean aBoolean) {
+
+	}
+
+	@Override
+	public boolean hasGravity() {
+		return false;
+	}
+
+	@Override
+	public void setHasGravity(boolean b) {
+
+	}
+
+	@Override
 	public List<MCMetadataValue> getMetadata(String s) {
 		return null;
 	}

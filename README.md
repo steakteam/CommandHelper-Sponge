@@ -1,29 +1,18 @@
-CommandHelper
-=============
-
+# CommandHelper
 [![Build Status](https://travis-ci.org/EngineHub/CommandHelper.svg?branch=master)](https://travis-ci.org/EngineHub/CommandHelper)
 
 CommandHelper adds simple command aliases, complex macros,
 and the ability to script your own commands and events into Minecraft,
 using the MethodScript scripting language.
 
-Compiling
----------
+# Compiling
+You can use a gradle's fancy commands.
+I hate maven ;(
+```
+gradlew build
+```
 
-You need to have Maven installed (http://maven.apache.org). Once installed,
-simply run:
-
-    mvn clean package install
-
-Maven will automatically download dependencies for you. Note: For that to work,
-be sure to add Maven to your "PATH". If you get a message about tests failing,
-try running:
-
-	mvn -Pprovisional-build clean package install
-
-Contributing
-------------
-
+# Contributing
 We happily accept contributions. The best way to do this is to fork
 CommandHelper on GitHub, add your changes, and then submit a pull request.
 We'll look at it, make comments, and merge it into CommandHelper if

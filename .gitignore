@@ -18,3 +18,7 @@ true
 /preferences.*
 .DS_Store
 /test-backend/
+
+\.gradle/
+
+build/
