@@ -15,7 +15,16 @@ repositories {
     maven { url "http://repo.mcstats.org/content/repositories/public" }
 }
 
+configurations {
+    // configuration that holds jars to include in the jar
+    jarBuildWith
+}
+
 dependencies {
+    jarBuildWith('com.sk89q:commandhelper:3.3.2-SNAPSHOT') {
+        exclude group: 'org.spigotmc'
+        exclude group: 'org.mcstats'
+    }
     compile('com.sk89q:commandhelper:3.3.2-SNAPSHOT') {
         exclude group: 'org.spigotmc'
         exclude group: 'org.mcstats'
@@ -27,7 +36,6 @@ compileJava.doFirst {
     def file = new File("$projectDir/src/main/java/com/laytonsmith/commandhelper/PomData.java")
     file.createNewFile()
     file.text = """package com.laytonsmith.commandhelper;
-
 public class PomData {
 \tpublic static final String GROUP = "$project.group";
 \tpublic static final String ARTIFACT_ID = "$ARTIFACT_ID";
@@ -40,5 +48,8 @@ public class PomData {
 }
 
 jar {
-    exclude 'com.sk89q:commandhelper:3.3.2-SNAPSHOT'
+    dependsOn configurations.runtime
+    from {
+        configurations.jarBuildWith.collect {it.isDirectory()? it: zipTree(it)}
+    }
 }
