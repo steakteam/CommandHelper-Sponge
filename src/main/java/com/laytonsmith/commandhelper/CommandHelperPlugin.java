@@ -8,22 +8,12 @@ import com.laytonsmith.PureUtilities.Common.StreamUtils;
 import com.laytonsmith.PureUtilities.ExecutionQueue;
 import com.laytonsmith.PureUtilities.SimpleVersion;
 import com.laytonsmith.PureUtilities.TermColors;
-import com.laytonsmith.abstraction.Implementation;
-import com.laytonsmith.abstraction.MCCommandSender;
-import com.laytonsmith.abstraction.MCPlayer;
-import com.laytonsmith.abstraction.MCServer;
-import com.laytonsmith.abstraction.StaticLayer;
+import com.laytonsmith.abstraction.*;
 import com.laytonsmith.abstraction.sponge.SpongeMCCommandBlock;
 import com.laytonsmith.abstraction.sponge.SpongeMCCommandSender;
 import com.laytonsmith.abstraction.sponge.SpongeMCConsole;
 import com.laytonsmith.abstraction.sponge.entities.SpongeMCPlayer;
-import com.laytonsmith.core.AliasCore;
-import com.laytonsmith.core.CHLog;
-import com.laytonsmith.core.Installer;
-import com.laytonsmith.core.MethodScriptExecutionQueue;
-import com.laytonsmith.core.Prefs;
-import com.laytonsmith.core.Profiles;
-import com.laytonsmith.core.Static;
+import com.laytonsmith.core.*;
 import com.laytonsmith.core.constructs.Target;
 import com.laytonsmith.core.extensions.ExtensionManager;
 import com.laytonsmith.core.profiler.Profiler;
@@ -42,11 +32,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.event.command.SendCommandEvent;
-import org.spongepowered.api.event.game.state.GameInitializationEvent;
-import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
-import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
-import org.spongepowered.api.event.game.state.GameStartingServerEvent;
-import org.spongepowered.api.event.game.state.GameStoppingEvent;
+import org.spongepowered.api.event.game.state.*;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
@@ -242,6 +228,7 @@ public class CommandHelperPlugin {
 		//interpreter events
 //		registerEvents(interpreterListener);
 //		registerEvents(serverListener);
+        registerEvents(playerListener);
 
 		//Script events
 		StaticLayer.Startup(this);
@@ -288,7 +275,7 @@ public class CommandHelperPlugin {
 	}
 
 	public void registerEvents(Object listener) {
-		// getServer().getPluginManager().registerEvents(listener, this);
+        Sponge.getEventManager().registerListeners(this, listener);
 	}
 
 	@Listener
@@ -351,7 +338,12 @@ public class CommandHelperPlugin {
 					})
 					.build(),
 			runalias = CommandSpec.builder()
-					.executor((src, args) -> CommandResult.empty())
+					.arguments(GenericArguments.remainingJoinedStrings(Text.of("command")))
+					.executor((src, args) -> {
+						String command = args.<String>getOne("command").get();
+						CommandHelperPlugin.getCore().alias('/' + command, new SpongeMCCommandSender(src));
+						return CommandResult.success();
+					})
 					.build(),
 			interpreteron = CommandSpec.builder()
 					.description(Text.of("Enables interpreter mode for the configured time."))
